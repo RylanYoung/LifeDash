@@ -8,7 +8,7 @@ import Link from "next/link";
 import { TaskRow } from "@/components/TaskRow";
 import { tabColor } from "@/components/ListDot";
 import { Button, ErrorNote, IconButton, Input, Rows, cx, toast } from "@/components/ui";
-import { createCategory, createTask, deleteCategory, deleteList, loadTasks, updateCategory, updateList, type TaskWithSteps } from "@/lib/data";
+import { createCategory, createTask, deleteCategory, deleteList, deleteTask, loadTasks, updateCategory, updateList, type TaskWithSteps } from "@/lib/data";
 import { useStore } from "@/lib/store";
 import { LIST_COLORS, type Category } from "@/lib/types";
 
@@ -20,12 +20,11 @@ export default function ListPage() {
   const cats = useMemo(() => categories.filter((c) => c.list_id === id), [categories, id]);
   const [tasks, setTasks] = useState<TaskWithSteps[] | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [showDone, setShowDone] = useState(false);
   const [menu, setMenu] = useState(false);
 
   const load = useCallback(() => {
     setError(null);
-    loadTasks(id).then(setTasks).catch((e) => setError(e.message));
+    loadTasks(id).then((ts) => setTasks([...ts].sort((a, b) => Number(a.done) - Number(b.done)))).catch((e) => setError(e.message));
   }, [id]);
 
   useEffect(() => {
@@ -52,7 +51,8 @@ export default function ListPage() {
 
   const open = tasks?.filter((t) => !t.done) ?? [];
   const done = tasks?.filter((t) => t.done) ?? [];
-  const visible = showDone ? tasks ?? [] : open;
+  // Ticked tasks stay put with a line through them until you delete them.
+  const visible = tasks ?? [];
   const loose = visible.filter((t) => !t.category_id || !cats.some((c) => c.id === t.category_id));
 
   async function patchList(patch: Parameters<typeof updateList>[1]) {
@@ -61,6 +61,20 @@ export default function ListPage() {
       await refresh();
     } catch (e) {
       toast(e instanceof Error ? e.message : "Could not save");
+    }
+  }
+
+  async function clearDone() {
+    if (!confirm(`Delete the ${done.length} completed task${done.length === 1 ? "" : "s"} in "${list!.name}"?`)) return;
+    const ids = done.map((t) => t.id);
+    setTasks((all) => all!.filter((t) => !ids.includes(t.id)));
+    try {
+      await Promise.all(ids.map((tid) => deleteTask(tid)));
+      touchTasks();
+      toast(`Cleared ${ids.length} completed`);
+    } catch {
+      toast("Could not clear them all");
+      load();
     }
   }
 
@@ -135,8 +149,9 @@ export default function ListPage() {
           {done.length ? <span className="chip chip-done tnum">{done.length} done</span> : null}
           <span className="ml-1">{list.kind === "business" ? "Business: Claude reads this list as context" : "Personal: kept out of Claude's context"}</span>
           {done.length ? (
-            <button className="font-medium text-ink-2 hover:text-ink" onClick={() => setShowDone(!showDone)}>
-              {showDone ? "Hide completed" : "Show completed"}
+            <button className="press ml-auto inline-flex h-7 items-center gap-1.5 rounded-full px-2.5 font-medium text-ink-2 hover:bg-danger-soft hover:text-danger" onClick={clearDone}>
+              <Trash size={13} />
+              Clear completed
             </button>
           ) : null}
         </p>

@@ -131,6 +131,11 @@ export function TaskRow({
             </span>
           ) : null}
         </button>
+        {task.done && !open ? (
+          <IconButton label="Delete task" onClick={remove} className="mt-0.5 size-9 text-ink-3 hover:bg-danger-soft hover:text-danger">
+            <Trash size={16} />
+          </IconButton>
+        ) : null}
       </div>
 
       {open ? (
