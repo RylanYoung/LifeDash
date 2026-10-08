@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
-import { Archive, ArrowBendUpLeft, ArrowLeft, ArrowSquareOut, EnvelopeSimple, EnvelopeSimpleOpen, MagnifyingGlass, NotePencil, PaperPlaneTilt, Star } from "@phosphor-icons/react";
+import { Archive, ArrowBendUpLeft, ArrowLeft, ArrowSquareOut, EnvelopeSimple, EnvelopeSimpleOpen, MagnifyingGlass, NotePencil, Star } from "@phosphor-icons/react";
 import { PageHeader } from "@/components/Shell";
-import { Button, Empty, ErrorNote, Field, IconButton, Input, Rows, Sheet, Textarea, cx, toast } from "@/components/ui";
+import { Button, Empty, ErrorNote, IconButton, Input, Rows, cx, toast } from "@/components/ui";
 import { useStore } from "@/lib/store";
+import { ComposeWindow, type Draft } from "@/components/ComposeWindow";
 import { api } from "@/lib/supabase";
 import type { MailMessage, MailSummary, MailThread } from "@/lib/types";
 import { fmtTime } from "@/lib/time";
@@ -36,7 +37,8 @@ function Mail() {
   const [submitted, setSubmitted] = useState("");
   const [threads, setThreads] = useState<MailSummary[] | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [compose, setCompose] = useState(false);
+  const [draft, setDraft] = useState<Draft | null>(null);
+  const [sentTick, setSentTick] = useState(0);
 
   const load = useCallback(() => {
     setError(null);
@@ -86,7 +88,7 @@ function Mail() {
           title="Email"
           sub={google?.email ?? undefined}
           actions={
-            <Button variant="primary" onClick={() => setCompose(true)}>
+            <Button variant="primary" onClick={() => setDraft({ to: "", subject: "" })}>
               <NotePencil size={15} />
               <span className="hidden sm:inline">Compose</span>
             </Button>
@@ -167,6 +169,8 @@ function Mail() {
                 id={selected}
                 summary={threads?.find((t) => t.id === selected)}
                 onBack={() => select(null)}
+                onReply={setDraft}
+                refreshKey={sentTick}
                 onPatch={(p) => patchThread(selected, p)}
                 onArchived={() => {
                   patchThread(selected, folder === "inbox" || folder === "unread" ? null : {});
@@ -180,7 +184,7 @@ function Mail() {
         </div>
       </div>
 
-      <Compose open={compose} onClose={() => setCompose(false)} />
+      <ComposeWindow draft={draft} onClose={() => setDraft(null)} onSent={() => setSentTick((n) => n + 1)} />
     </>
   );
 }
@@ -189,20 +193,21 @@ function Reader({
   id,
   summary,
   onBack,
+  onReply,
+  refreshKey,
   onPatch,
   onArchived,
 }: {
   id: string;
   summary?: MailSummary;
   onBack: () => void;
+  onReply: (d: Draft) => void;
+  refreshKey: number;
   onPatch: (p: Partial<MailSummary>) => void;
   onArchived: () => void;
 }) {
   const [thread, setThread] = useState<MailThread | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [reply, setReply] = useState("");
-  const [replying, setReplying] = useState(false);
-  const [sending, setSending] = useState(false);
   const [starred, setStarred] = useState(summary?.starred ?? false);
   const myEmail = useStore().google?.email;
 
@@ -216,6 +221,11 @@ function Reader({
       .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
+
+  // After sending a reply, show it in the thread.
+  useEffect(() => {
+    if (refreshKey) api<MailThread>(`/api/mail/${id}`).then(setThread).catch(() => {});
+  }, [refreshKey, id]);
 
   async function modify(add: string[], remove: string[], done: string) {
     try {
@@ -233,31 +243,15 @@ function Reader({
   const mine = Boolean(myEmail && last?.from.toLowerCase().includes(myEmail.toLowerCase()));
   const to = last ? (mine ? last.to : last.from) : "";
 
-  async function send() {
-    if (!thread || !last || !reply.trim()) return;
-    setSending(true);
-    try {
-      await api("/api/mail", {
-        method: "POST",
-        body: JSON.stringify({
-          action: "send",
-          to,
-          subject: /^re:/i.test(thread.subject) ? thread.subject : `Re: ${thread.subject}`,
-          body: reply,
-          threadId: thread.id,
-          inReplyTo: last.messageId,
-          references: last.references,
-        }),
-      });
-      toast("Reply sent");
-      setReply("");
-      setReplying(false);
-      setThread(await api<MailThread>(`/api/mail/${id}`));
-    } catch (e) {
-      toast(e instanceof Error ? e.message : "Could not send");
-    } finally {
-      setSending(false);
-    }
+  function openReply() {
+    if (!thread || !last) return;
+    onReply({
+      to,
+      subject: /^re:/i.test(thread.subject) ? thread.subject : `Re: ${thread.subject}`,
+      threadId: thread.id,
+      inReplyTo: last.messageId,
+      references: last.references,
+    });
   }
 
   return (
@@ -266,7 +260,7 @@ function Reader({
         <IconButton label="Back" onClick={onBack} className="md:hidden">
           <ArrowLeft size={18} />
         </IconButton>
-        <Button size="sm" variant="ghost" onClick={() => setReplying(true)} disabled={!thread}>
+        <Button size="sm" variant="ghost" onClick={openReply} disabled={!thread}>
           <ArrowBendUpLeft size={15} />
           Reply
         </Button>
@@ -327,39 +321,13 @@ function Reader({
               ))}
             </div>
 
-            {replying ? (
-              <div className="anim-pop mt-4 rounded-xl border border-rule-strong bg-page">
-                <p className="border-b border-rule px-3.5 py-2 text-xs text-ink-3">To {to}</p>
-                <textarea
-                  autoFocus
-                  value={reply}
-                  onChange={(e) => setReply(e.target.value)}
-                  onKeyDown={(e) => (e.metaKey || e.ctrlKey) && e.key === "Enter" && send()}
-                  rows={6}
-                  placeholder="Write your reply"
-                  aria-label="Reply"
-                  className="w-full resize-y bg-transparent px-3.5 py-3 text-[15px] leading-relaxed text-ink placeholder:text-ink-3 focus:outline-none md:text-sm"
-                />
-                <div className="flex items-center gap-2 border-t border-rule px-3 py-2">
-                  <span className="hidden text-xs text-ink-3 md:inline">Ctrl + Enter to send</span>
-                  <Button size="sm" variant="ghost" className="ml-auto" onClick={() => setReplying(false)}>
-                    Discard
-                  </Button>
-                  <Button size="sm" variant="primary" busy={sending} disabled={!reply.trim()} onClick={send}>
-                    <PaperPlaneTilt size={14} />
-                    Send
-                  </Button>
-                </div>
-              </div>
-            ) : (
               <button
-                onClick={() => setReplying(true)}
+                onClick={openReply}
                 className="press mt-4 flex h-11 w-full items-center gap-2 rounded-xl border border-rule-strong px-4 text-left text-sm text-ink-3 hover:bg-sunk/60"
               >
                 <ArrowBendUpLeft size={15} />
                 Reply to {to.replace(/<.*>/, "").replace(/"/g, "").trim() || "sender"}
               </button>
-            )}
           </div>
         )}
       </div>
@@ -393,7 +361,7 @@ function Message({ m, defaultOpen }: { m: MailMessage; defaultOpen: boolean }) {
 function HtmlBody({ html }: { html: string }) {
   const ref = useRef<HTMLIFrameElement>(null);
   const [h, setH] = useState(200);
-  const doc = `<!doctype html><html><head><meta charset="utf-8"><base target="_blank"><style>body{margin:0;font:14px/1.55 system-ui,sans-serif;color:#1d2026;background:#fff;word-wrap:break-word}img{max-width:100%;height:auto}table{max-width:100%}</style></head><body>${html}</body></html>`;
+  const doc = `<!doctype html><html><head><meta charset="utf-8"><meta name="referrer" content="no-referrer"><base target="_blank"><style>body{margin:0;font:14px/1.55 system-ui,sans-serif;color:#1d2026;background:#fff;word-wrap:break-word}img{max-width:100%;height:auto}table{max-width:100%}</style></head><body>${html}</body></html>`;
   return (
     <iframe
       ref={ref}
@@ -407,67 +375,5 @@ function HtmlBody({ html }: { html: string }) {
       className="w-full rounded-lg bg-white"
       style={{ height: h }}
     />
-  );
-}
-
-function Compose({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const [to, setTo] = useState("");
-  const [cc, setCc] = useState("");
-  const [subject, setSubject] = useState("");
-  const [body, setBody] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  async function send() {
-    setBusy(true);
-    setError(null);
-    try {
-      await api("/api/mail", { method: "POST", body: JSON.stringify({ action: "send", to, cc, subject, body }) });
-      toast("Email sent");
-      setTo("");
-      setCc("");
-      setSubject("");
-      setBody("");
-      onClose();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not send");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  return (
-    <Sheet
-      open={open}
-      onClose={onClose}
-      title="New email"
-      footer={
-        <>
-          <Button variant="ghost" className="ml-auto" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button variant="primary" busy={busy} disabled={!to.trim()} onClick={send}>
-            <PaperPlaneTilt size={14} />
-            Send
-          </Button>
-        </>
-      }
-    >
-      <div className="grid gap-4">
-        <Field label="To" htmlFor="c-to" hint="Separate several addresses with commas.">
-          <Input id="c-to" type="text" inputMode="email" value={to} onChange={(e) => setTo(e.target.value)} />
-        </Field>
-        <Field label="Cc" htmlFor="c-cc">
-          <Input id="c-cc" type="text" inputMode="email" value={cc} onChange={(e) => setCc(e.target.value)} />
-        </Field>
-        <Field label="Subject" htmlFor="c-subject">
-          <Input id="c-subject" value={subject} onChange={(e) => setSubject(e.target.value)} />
-        </Field>
-        <Field label="Message" htmlFor="c-body">
-          <Textarea id="c-body" rows={10} value={body} onChange={(e) => setBody(e.target.value)} />
-        </Field>
-        {error ? <ErrorNote message={error} /> : null}
-      </div>
-    </Sheet>
   );
 }

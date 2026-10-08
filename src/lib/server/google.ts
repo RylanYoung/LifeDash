@@ -213,23 +213,80 @@ export async function modifyThread(userId: string, sb: SupabaseClient, id: strin
 /** RFC 2047 encode a header value only when it needs it. */
 const encHeader = (s: string) => (/^[\x20-\x7e]*$/.test(s) ? s : `=?UTF-8?B?${Buffer.from(s).toString("base64")}?=`);
 
+/** The account's Gmail "Send as" identity: display name and signature (HTML), cached briefly. */
+const sendAsCache = new Map<string, { at: number; value: SendAs }>();
+export type SendAs = { email: string; name: string; signature: string };
+
+export async function getSendAs(userId: string, sb: SupabaseClient): Promise<SendAs> {
+  const hit = sendAsCache.get(userId);
+  if (hit && Date.now() - hit.at < 10 * 60_000) return hit.value;
+  const data = (await gfetch(userId, sb, `${GM}/settings/sendAs`)) as {
+    sendAs?: { sendAsEmail: string; displayName?: string; signature?: string; isPrimary?: boolean; isDefault?: boolean }[];
+  };
+  const list = data.sendAs ?? [];
+  const main = list.find((s) => s.isDefault) ?? list.find((s) => s.isPrimary) ?? list[0];
+  const value = { email: main?.sendAsEmail ?? "", name: main?.displayName ?? "", signature: main?.signature ?? "" };
+  sendAsCache.set(userId, { at: Date.now(), value });
+  return value;
+}
+
+const escapeHtml = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+const htmlToText = (h: string) =>
+  h
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/(p|div|tr|li)>/gi, "\n")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+
+const b64lines = (s: string) => Buffer.from(s).toString("base64").replace(/(.{76})/g, "$1\r\n");
+
 export async function sendMail(
   userId: string,
   sb: SupabaseClient,
-  m: { to: string; cc?: string; subject: string; body: string; threadId?: string; inReplyTo?: string; references?: string }
+  m: { to: string; cc?: string; bcc?: string; subject: string; body: string; threadId?: string; inReplyTo?: string; references?: string; signature?: boolean }
 ) {
   if (!m.to?.trim()) throw new HttpError(400, "Add at least one recipient.");
-  const lines = [
+  const me = await getSendAs(userId, sb).catch(() => null);
+  const sig = m.signature !== false && me?.signature ? me.signature : "";
+
+  // Plain text and HTML versions, like Gmail sends. The signature goes on both.
+  const text = sig ? `${m.body}\r\n\r\n--\r\n${htmlToText(sig)}` : m.body;
+  const html =
+    `<div dir="ltr">${escapeHtml(m.body).replace(/\r?\n/g, "<br>")}</div>` +
+    (sig ? `<br><div dir="ltr" class="gmail_signature" data-smartmail="gmail_signature">${sig}</div>` : "");
+
+  const boundary = `lifedash_${crypto.randomUUID().replace(/-/g, "")}`;
+  const headers = [
+    me?.email ? `From: ${me.name ? `${encHeader(me.name)} ` : ""}<${me.email}>` : "",
     `To: ${m.to}`,
     m.cc ? `Cc: ${m.cc}` : "",
+    m.bcc ? `Bcc: ${m.bcc}` : "",
     `Subject: ${encHeader(m.subject || "")}`,
     m.inReplyTo ? `In-Reply-To: ${m.inReplyTo}` : "",
     m.inReplyTo ? `References: ${[m.references, m.inReplyTo].filter(Boolean).join(" ")}` : "",
     "MIME-Version: 1.0",
+    `Content-Type: multipart/alternative; boundary="${boundary}"`,
+  ].filter(Boolean);
+  const raw = [
+    headers.join("\r\n"),
+    "",
+    `--${boundary}`,
     "Content-Type: text/plain; charset=UTF-8",
     "Content-Transfer-Encoding: base64",
-  ].filter(Boolean);
-  const raw = `${lines.join("\r\n")}\r\n\r\n${Buffer.from(m.body).toString("base64")}`;
+    "",
+    b64lines(text),
+    `--${boundary}`,
+    "Content-Type: text/html; charset=UTF-8",
+    "Content-Transfer-Encoding: base64",
+    "",
+    b64lines(html),
+    `--${boundary}--`,
+    "",
+  ].join("\r\n");
+
   const out = (await gfetch(userId, sb, `${GM}/messages/send`, {
     method: "POST",
     body: JSON.stringify({ raw: Buffer.from(raw).toString("base64url"), ...(m.threadId ? { threadId: m.threadId } : {}) }),
