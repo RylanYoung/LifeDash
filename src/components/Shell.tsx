@@ -10,6 +10,7 @@ import { AuthGate } from "./AuthGate";
 import { QuickAdd } from "./QuickAdd";
 import { Toaster, cx } from "./ui";
 import { ListDot } from "./ListDot";
+import { GoogleApps } from "./GoogleApps";
 
 const NAV = [
   { href: "/", label: "Today", icon: SunHorizon },
@@ -106,7 +107,8 @@ export function Shell({ children }: { children: ReactNode }) {
           })}
         </nav>
 
-        <div className="mt-auto border-t border-rule p-3">
+        <div className="mt-auto grid gap-0.5 border-t border-rule p-3">
+          <GoogleApps variant="sidebar" />
           <Link
             href="/settings"
             className={cx(
@@ -174,6 +176,9 @@ export function PageHeader({ title, sub, actions }: { title: string; sub?: React
       </div>
       <div className="flex items-center gap-2">
         {actions}
+        <div className="md:hidden">
+          <GoogleApps variant="icon" />
+        </div>
         <Link href="/settings" className="press inline-flex size-9 items-center justify-center rounded-lg text-ink-3 hover:bg-sunk md:hidden" aria-label="Settings">
           <GearSix size={20} />
         </Link>
