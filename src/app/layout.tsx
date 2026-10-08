@@ -7,10 +7,10 @@ const mono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 // Private, single-owner app: keep it out of every index.
 export const metadata: Metadata = {
-  title: { default: "Daybook", template: "%s · Daybook" },
+  title: { default: "LifeDash", template: "%s · LifeDash" },
   description: "Tasks, calendar and email in one place.",
   robots: { index: false, follow: false, nocache: true, googleBot: { index: false, follow: false } },
-  appleWebApp: { capable: true, title: "Daybook", statusBarStyle: "default" },
+  appleWebApp: { capable: true, title: "LifeDash", statusBarStyle: "default" },
 };
 
 export const viewport: Viewport = {

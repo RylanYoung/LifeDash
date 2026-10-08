@@ -74,7 +74,7 @@ export default function ListPage() {
 
   return (
     <>
-      <title>{`${list.name} · Daybook`}</title>
+      <title>{`${list.name} · LifeDash`}</title>
       <header className="px-4 pt-6 pb-2 md:px-8 md:pt-8">
         <div className="flex items-start gap-3">
           <span className="mt-2.5 inline-block size-3 shrink-0 rounded-[4px]" style={{ background: tabColor(list.color) }} />

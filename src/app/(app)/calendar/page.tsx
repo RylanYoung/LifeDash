@@ -58,7 +58,7 @@ export default function CalendarPage() {
 
   return (
     <>
-      <title>Calendar · Daybook</title>
+      <title>Calendar · LifeDash</title>
       <PageHeader
         title="Calendar"
         sub={label}
@@ -88,7 +88,7 @@ export default function CalendarPage() {
           <Empty
             icon={<CalendarBlank size={20} />}
             title="Connect Google Calendar"
-            body="Link your Google account once and your calendar shows up here. You can add, move and delete events without leaving Daybook."
+            body="Link your Google account once and your calendar shows up here. You can add, move and delete events without leaving LifeDash."
             action={
               <Link href="/settings#google">
                 <Button variant="primary" size="sm">

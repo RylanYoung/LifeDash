@@ -47,7 +47,7 @@ export default function TodayPage() {
 
   return (
     <>
-      <title>Today · Daybook</title>
+      <title>Today · LifeDash</title>
       <PageHeader title={dateLabel} sub={greeting} />
       <div className="grid gap-4 px-4 pb-10 md:px-8 lg:grid-cols-[minmax(0,1fr)_360px]">
         <div className="grid min-w-0 content-start gap-4">

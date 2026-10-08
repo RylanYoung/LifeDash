@@ -21,7 +21,7 @@ const rpcError = (id: Rpc["id"], code: number, message: string) =>
   new Response(JSON.stringify({ jsonrpc: "2.0", id, error: { code, message } }), { headers: HEADERS });
 
 const INSTRUCTIONS =
-  "This is the owner's Daybook: their to-do lists, Gmail, Google Calendar and business context. " +
+  "This is the owner's LifeDash: their to-do lists, Gmail, Google Calendar and business context. " +
   "Start with get_today for anything about today. Use get_business_context for business questions; personal lists are " +
   "not context, but you may read or change them when the owner asks. Never use em dashes in anything you write.";
 
@@ -45,7 +45,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ secret:
       return result(id, {
         protocolVersion: (p as { protocolVersion?: string }).protocolVersion ?? "2025-06-18",
         capabilities: { tools: { listChanged: false } },
-        serverInfo: { name: "daybook", version: "1.0.0" },
+        serverInfo: { name: "lifedash", version: "1.0.0" },
         instructions: INSTRUCTIONS,
       });
     case "ping":

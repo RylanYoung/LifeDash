@@ -21,9 +21,10 @@ export function AuthGate() {
     try {
       const sb = supabase();
       if (mode === "up") {
-        const { data, error } = await sb.auth.signUp({ email: email.trim(), password });
+        // The confirmation link brings you back to wherever LifeDash is running.
+        const { data, error } = await sb.auth.signUp({ email: email.trim(), password, options: { emailRedirectTo: window.location.origin } });
         if (error) throw error;
-        if (!data.session) setNote("Check your inbox to confirm your email, then sign in.");
+        if (!data.session) setNote("Check your inbox and click the confirmation link. It signs you straight in. You only do this once.");
       } else {
         const { error } = await sb.auth.signInWithPassword({ email: email.trim(), password });
         if (error) throw error;
@@ -39,7 +40,7 @@ export function AuthGate() {
   return (
     <div className="flex min-h-dvh items-center justify-center px-4">
       <form onSubmit={submit} className="anim-pop w-full max-w-[360px] rounded-2xl border border-rule bg-page p-6 shadow-float">
-        <h1 className="text-xl font-semibold tracking-[-0.02em]">{mode === "in" ? "Open your Daybook" : "Create your Daybook"}</h1>
+        <h1 className="text-xl font-semibold tracking-[-0.02em]">{mode === "in" ? "Open your LifeDash" : "Create your LifeDash"}</h1>
         <p className="mt-1 text-sm text-ink-3">Tasks, calendar and email in one place.</p>
         <div className="mt-6 grid gap-4">
           <Field label="Email" htmlFor="email">

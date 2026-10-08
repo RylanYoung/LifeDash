@@ -48,7 +48,7 @@ export function Shell({ children }: { children: ReactNode }) {
       <aside className="sticky top-0 hidden h-dvh flex-col border-r border-rule bg-rail md:flex">
         <div className="flex items-center gap-2 px-5 pt-5 pb-4">
           <Mark />
-          <span className="text-[15px] font-semibold tracking-[-0.01em]">Daybook</span>
+          <span className="text-[15px] font-semibold tracking-[-0.01em]">LifeDash</span>
         </div>
 
         <div className="px-3 pb-3">
@@ -201,7 +201,7 @@ function NotConfigured() {
   useEffect(() => setOrigin(window.location.origin), []);
   return (
     <div className="mx-auto max-w-lg px-6 py-20">
-      <h1 className="text-xl font-semibold">Daybook needs its Supabase keys</h1>
+      <h1 className="text-xl font-semibold">LifeDash needs its Supabase keys</h1>
       <p className="mt-2 text-sm leading-relaxed text-ink-2">
         Add <code className="font-mono text-[13px]">NEXT_PUBLIC_SUPABASE_URL</code> and <code className="font-mono text-[13px]">NEXT_PUBLIC_SUPABASE_ANON_KEY</code> to{" "}
         <code className="font-mono text-[13px]">.env.local</code> (or your Vercel project settings), then restart. {origin ? `This app is running at ${origin}.` : ""}

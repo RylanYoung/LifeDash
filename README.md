@@ -1,4 +1,4 @@
-# Daybook
+# LifeDash
 
 Your tasks, Google Calendar and Gmail in one place, plus a Claude connector so Claude (on your Pro plan) can manage your to-dos and write a morning brief and evening recap.
 
@@ -18,15 +18,15 @@ Stack: Next.js 16, Tailwind 4, Supabase, Vercel.
 3. **Project Settings > API**: copy the Project URL and the anon (publishable) key.
 
 ### 2. Google Cloud (Gmail + Calendar)
-1. Go to console.cloud.google.com and create a project (name it "Daybook").
+1. Go to console.cloud.google.com and create a project (name it "LifeDash").
 2. **APIs & Services > Library**: enable **Gmail API** and **Google Calendar API**.
 3. **APIs & Services > OAuth consent screen** (Google Auth Platform):
-   - User type **External**, app name "Daybook", your email as support and developer contact.
+   - User type **External**, app name "LifeDash", your email as support and developer contact.
    - **Audience**: add your Gmail address as a **test user**.
 4. **Clients > Create client > Web application**:
    - Authorized redirect URIs: `http://localhost:3000/google/callback` and `https://YOUR-VERCEL-DOMAIN/google/callback`
    - Copy the Client ID and Client secret.
-5. Important: while the app is in **Testing**, Google expires the connection every 7 days. To stop that, go to **Audience** and click **Publish app**. You'll see an "unverified app" warning when you connect; click **Advanced > Go to Daybook**. That's fine for a personal app only you use.
+5. Important: while the app is in **Testing**, Google expires the connection every 7 days. To stop that, go to **Audience** and click **Publish app**. You'll see an "unverified app" warning when you connect; click **Advanced > Go to LifeDash**. That's fine for a personal app only you use.
 
 ### 3. Environment variables
 Copy `.env.example` to `.env.local` and fill it in. Use the same values in Vercel (**Project > Settings > Environment Variables**).
@@ -36,7 +36,7 @@ Copy `.env.example` to `.env.local` and fill it in. Use the same values in Verce
 | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase, step 1 |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Google Cloud, step 2 |
 | `MCP_SECRET` | Any long random string. Generate one: `node -e "console.log(require('crypto').randomBytes(24).toString('base64url'))"` |
-| `OWNER_EMAIL`, `OWNER_PASSWORD` | The email and password you sign in to Daybook with. The Claude connector signs in as you. |
+| `OWNER_EMAIL`, `OWNER_PASSWORD` | The email and password you sign in to LifeDash with. The Claude connector signs in as you. |
 
 ### 4. Run and deploy
 ```bash

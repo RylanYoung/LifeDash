@@ -46,7 +46,7 @@ function Index() {
 
   return (
     <>
-      <title>Tasks · Daybook</title>
+      <title>Tasks · LifeDash</title>
       <PageHeader
         title="Tasks"
         sub="Business lists feed Claude's context. Personal lists stay private."

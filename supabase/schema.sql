@@ -1,4 +1,4 @@
--- Daybook schema. Paste into Supabase: SQL Editor > New query > Run.
+-- LifeDash schema. Paste into Supabase: SQL Editor > New query > Run.
 -- Safe to re-run: every statement is idempotent.
 
 create extension if not exists pgcrypto;

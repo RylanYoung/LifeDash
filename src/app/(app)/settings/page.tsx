@@ -9,7 +9,7 @@ import { useStore } from "@/lib/store";
 import { api, supabase } from "@/lib/supabase";
 import type { ContextFact, ContextNote } from "@/lib/types";
 
-const MORNING = `Use the Daybook connector. Call get_today, then get_business_context.
+const MORNING = `Use the LifeDash connector. Call get_today, then get_business_context.
 Write my morning brief in short Markdown:
 1. Top 3 things to do today, most important first, and why.
 2. Today's schedule, with any prep each meeting needs.
@@ -18,7 +18,7 @@ Write my morning brief in short Markdown:
 If my emails contain a durable business fact (a client signed, a price changed, a new deadline), save each one with add_context_fact. Ignore personal matters for context.
 Plain language, no em dashes. Save it with save_brief, kind "morning".`;
 
-const RECAP = `Use the Daybook connector. Call get_today.
+const RECAP = `Use the LifeDash connector. Call get_today.
 Write my evening recap in short Markdown:
 1. What got done today.
 2. What is still open and should roll to tomorrow.
@@ -29,7 +29,7 @@ Plain language, no em dashes. Save it with save_brief, kind "recap".`;
 export default function SettingsPage() {
   return (
     <>
-      <title>Settings · Daybook</title>
+      <title>Settings · LifeDash</title>
       <PageHeader title="Settings" />
       <div className="grid max-w-3xl gap-4 px-4 pb-16 md:px-8">
         <GoogleSection />
@@ -145,7 +145,7 @@ function ClaudeSection() {
       <Panel title="Claude">
         <div className="grid gap-5">
           <div>
-            <p className="text-sm font-medium">1. Add Daybook to Claude</p>
+            <p className="text-sm font-medium">1. Add LifeDash to Claude</p>
             <p className="mt-1 text-[13px] leading-relaxed text-ink-3">
               In Claude, open Settings, then Connectors, then Add custom connector. Paste this link. Claude can then add and tick off tasks, check your calendar and
               read your email in any chat. Treat the link like a password.

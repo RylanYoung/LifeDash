@@ -58,7 +58,7 @@ function Mail() {
   if (google && !google.connected) {
     return (
       <>
-        <title>Email · Daybook</title>
+        <title>Email · LifeDash</title>
         <PageHeader title="Email" />
         <div className="px-4 md:px-8">
           <Empty
@@ -80,7 +80,7 @@ function Mail() {
 
   return (
     <>
-      <title>Email · Daybook</title>
+      <title>Email · LifeDash</title>
       <div className={cx(selected && "hidden md:block")}>
         <PageHeader
           title="Email"
