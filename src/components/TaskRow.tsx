@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CalendarBlank, Plus, Trash, X } from "@phosphor-icons/react";
+import { CalendarBlank, CheckSquare, Plus, Trash, X } from "@phosphor-icons/react";
 import { addCheckpoint, deleteCheckpoint, deleteTask, doneFields, localDate, updateCheckpoint, updateTask, type TaskWithSteps } from "@/lib/data";
 import { useStore } from "@/lib/store";
 import type { Checkpoint } from "@/lib/types";
@@ -96,7 +96,7 @@ export function TaskRow({
   }
 
   return (
-    <li className={cx("group rounded-lg transition-colors duration-150", open ? "bg-sunk/70" : "hover:bg-sunk/60")}>
+    <li className={cx("task-row group rounded-xl", open && "is-open", task.done && "is-done")} style={{ "--tone": color } as React.CSSProperties}>
       <div className="flex min-h-11 items-start gap-1.5 px-1.5 py-1.5">
         <Tick on={task.done} onChange={toggle} label={task.done ? "Mark as not done" : "Mark as done"} color={color} />
         <button type="button" onClick={() => setOpen(!open)} aria-expanded={open} className="min-w-0 flex-1 py-1 text-left">
@@ -104,25 +104,30 @@ export function TaskRow({
             {task.title}
           </span>
           {(due || task.checkpoints.length || (showList && list) || task.notes) && !open ? (
-            <span className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink-3">
+            <span className="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs text-ink-3">
               {showList && list ? (
-                <span className="inline-flex items-center gap-1.5">
+                <span className="chip" style={{ "--tone": color } as React.CSSProperties}>
                   <ListDot color={list.color} size={7} />
                   {list.name}
                 </span>
               ) : null}
-              {due ? (
-                <span className={cx("inline-flex items-center gap-1", due.tone === "late" && "font-medium text-danger", due.tone === "today" && "font-medium text-accent-text")}>
-                  <CalendarBlank size={12} />
+              {due && !task.done ? (
+                <span className={cx("chip", `chip-${due.tone}`)}>
+                  <CalendarBlank size={12} weight="bold" />
                   {due.tone === "late" ? `Overdue, ${due.text}` : due.text}
                 </span>
               ) : null}
               {task.checkpoints.length ? (
-                <span className="tnum">
-                  {doneSteps}/{task.checkpoints.length} checkpoints
+                <span
+                  className={cx("chip tnum", doneSteps === task.checkpoints.length && "chip-done")}
+                  style={{ "--tone": color } as React.CSSProperties}
+                  title={`${doneSteps} of ${task.checkpoints.length} checkpoints done`}
+                >
+                  <CheckSquare size={12} weight="bold" />
+                  {doneSteps}/{task.checkpoints.length}
                 </span>
               ) : null}
-              {task.notes ? <span className="max-w-[36ch] truncate">{task.notes}</span> : null}
+              {task.notes ? <span className="ml-0.5 max-w-[36ch] truncate">{task.notes}</span> : null}
             </span>
           ) : null}
         </button>

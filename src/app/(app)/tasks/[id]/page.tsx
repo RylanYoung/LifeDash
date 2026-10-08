@@ -73,11 +73,12 @@ export default function ListPage() {
   }
 
   return (
-    <>
+    <div style={{ "--tone": tabColor(list.color) } as React.CSSProperties}>
       <title>{`${list.name} · LifeDash`}</title>
-      <header className="px-4 pt-6 pb-2 md:px-8 md:pt-8">
+      <header className="max-w-3xl px-4 pt-6 md:px-8 md:pt-8">
+        <div className="tone-banner px-4 py-4 md:px-5">
         <div className="flex items-start gap-3">
-          <span className="mt-2.5 inline-block size-3 shrink-0 rounded-[4px]" style={{ background: tabColor(list.color) }} />
+          <span className="mt-2 inline-block size-4 shrink-0 rounded-[5px]" style={{ background: tabColor(list.color) }} />
           <div className="min-w-0 flex-1">
             <EditableText
               key={`n-${list.id}`}
@@ -129,17 +130,17 @@ export default function ListPage() {
             ) : null}
           </div>
         </div>
-        <p className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 pl-6 text-xs text-ink-3">
-          <span className="tnum">
-            {open.length} open{done.length ? `, ${done.length} done` : ""}
-          </span>
-          <span>{list.kind === "business" ? "Business: Claude reads this list as context" : "Personal: kept out of Claude's context"}</span>
+        <p className="mt-3 flex flex-wrap items-center gap-2 pl-7 text-xs text-ink-3">
+          <span className="tone-count tnum">{open.length} open</span>
+          {done.length ? <span className="chip chip-done tnum">{done.length} done</span> : null}
+          <span className="ml-1">{list.kind === "business" ? "Business: Claude reads this list as context" : "Personal: kept out of Claude's context"}</span>
           {done.length ? (
             <button className="font-medium text-ink-2 hover:text-ink" onClick={() => setShowDone(!showDone)}>
               {showDone ? "Hide completed" : "Show completed"}
             </button>
           ) : null}
         </p>
+        </div>
       </header>
 
       <div className="grid max-w-3xl gap-6 px-4 pt-4 pb-16 md:px-8">
@@ -149,8 +150,8 @@ export default function ListPage() {
         ) : (
           <>
             {loose.length || !cats.length ? (
-              <section>
-                <ul className="-mx-1.5 grid">
+              <section className="tone-card px-2 py-2">
+                <ul className="grid">
                   {loose.map((t) => (
                     <TaskRow key={t.id} task={t} onChange={(n) => replace(t, n)} />
                   ))}
@@ -173,7 +174,7 @@ export default function ListPage() {
           </>
         )}
       </div>
-    </>
+    </div>
   );
 }
 
@@ -199,10 +200,10 @@ function CategorySection({
     await refresh();
   }
   return (
-    <section className="group/cat">
-      <div className="flex items-start gap-2 border-b border-rule pb-2">
+    <section className="group/cat tone-card">
+      <div className="tone-head flex items-start gap-2 px-4 py-3">
         <div className="min-w-0 flex-1">
-          <EditableText value={category.name} onSave={(name) => name && save({ name })} className="w-full bg-transparent text-[15px] font-semibold" label="Category name" />
+          <EditableText value={category.name} onSave={(name) => name && save({ name })} className="w-full bg-transparent text-base font-semibold" label="Category name" />
           <EditableText
             value={category.description}
             placeholder="What belongs here?"
@@ -211,17 +212,19 @@ function CategorySection({
             label="Category description"
           />
         </div>
-        <span className="pt-1 text-xs text-ink-3 tnum">{tasks.filter((t) => !t.done).length}</span>
+        <span className="tone-count mt-0.5 tnum" title="Open tasks">{tasks.filter((t) => !t.done).length}</span>
         <IconButton label="Delete category" onClick={remove} className="hover-only size-7 opacity-0 group-hover/cat:opacity-100 focus:opacity-100">
           <Trash size={14} />
         </IconButton>
       </div>
-      <ul className="-mx-1.5 mt-1 grid">
-        {tasks.map((t) => (
-          <TaskRow key={t.id} task={t} onChange={(n) => onTask(t, n)} />
-        ))}
-      </ul>
-      <AddTask listId={category.list_id} categoryId={category.id} onAdd={onAdd} />
+      <div className="px-2 py-2">
+        <ul className="grid">
+          {tasks.map((t) => (
+            <TaskRow key={t.id} task={t} onChange={(n) => onTask(t, n)} />
+          ))}
+        </ul>
+        <AddTask listId={category.list_id} categoryId={category.id} onAdd={onAdd} />
+      </div>
     </section>
   );
 }
@@ -243,8 +246,8 @@ function AddTask({ listId, categoryId, onAdd }: { listId: string; categoryId: st
   }
   return (
     <div className="flex items-center gap-1.5 px-1.5">
-      <span className="inline-flex size-7 items-center justify-center text-ink-3">
-        <Plus size={15} />
+      <span className="tone-plus inline-flex size-7 items-center justify-center">
+        <Plus size={16} weight="bold" />
       </span>
       <input
         value={title}

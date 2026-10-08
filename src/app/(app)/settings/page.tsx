@@ -8,6 +8,7 @@ import { addFact, deleteFact, deleteNote, loadFacts, loadNotes, saveNote } from 
 import { useStore } from "@/lib/store";
 import { api, supabase } from "@/lib/supabase";
 import { MORNING, RECAP } from "@/lib/prompts";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import type { ContextFact, ContextNote } from "@/lib/types";
 
 export default function SettingsPage() {
@@ -321,6 +322,12 @@ function AccountSection() {
   const { session } = useStore();
   return (
     <Panel title="Account">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-rule pb-4">
+        <p className="text-sm text-ink-2">Appearance</p>
+        <div className="w-[240px]">
+          <ThemeToggle withLabels />
+        </div>
+      </div>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-ink-2">{session?.user.email}</p>
         <Button variant="secondary" size="sm" onClick={() => supabase().auth.signOut()}>

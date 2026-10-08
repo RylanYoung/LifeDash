@@ -58,7 +58,7 @@ export default function TodayPage() {
       <title>Today · LifeDash</title>
       <PageHeader title={dateLabel} sub={greeting} />
       <div className="grid gap-4 px-4 pb-10 md:px-8 lg:grid-cols-[minmax(0,1fr)_360px]">
-        <div className="grid min-w-0 content-start gap-4">
+        <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] content-start gap-4">
           <AskClaude />
           {error ? <ErrorNote message={error} onRetry={load} /> : null}
           <GetStarted hasBrief={Boolean(briefs?.length)} />
@@ -91,7 +91,7 @@ export default function TodayPage() {
           </Panel>
         </div>
 
-        <div className="grid content-start gap-4">
+        <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] content-start gap-4">
           <SchedulePanel connected={google?.connected} />
           <InboxPanel connected={google?.connected} />
         </div>
@@ -232,10 +232,10 @@ function SchedulePanel({ connected }: { connected?: boolean }) {
       ) : !events.length ? (
         <p className="py-2 text-sm text-ink-3">Nothing on the calendar today.</p>
       ) : (
-        <ol className="grid">
+        <ol className="grid grid-cols-[minmax(0,1fr)]">
           {allDay.map((e) => (
             <li key={e.id} className="mb-1 flex items-center gap-3 rounded-md bg-accent-soft px-2.5 py-1.5 text-[13px] text-ink">
-              <span className="w-12 text-xs text-ink-3">All day</span>
+              <span className="w-[62px] shrink-0 whitespace-nowrap text-xs text-ink-3">All day</span>
               <span className="truncate">{e.title}</span>
             </li>
           ))}
@@ -246,10 +246,10 @@ function SchedulePanel({ connected }: { connected?: boolean }) {
               <li key={e.id}>
                 {i === nowIndex && !live ? <NowLine /> : null}
                 <a href={e.link} target="_blank" rel="noreferrer" className={cx("flex gap-3 rounded-md px-1 py-2 hover:bg-sunk/70", past && "opacity-55")}>
-                  <span className={cx("w-12 shrink-0 pt-px font-mono text-xs tnum", live ? "font-medium text-accent-text" : "text-ink-3")}>{fmtTime(e.start)}</span>
+                  <span className={cx("w-[62px] shrink-0 whitespace-nowrap pt-px font-mono text-xs tnum", live ? "font-medium text-accent-text" : "text-ink-3")}>{fmtTime(e.start)}</span>
                   <span className="min-w-0">
                     <span className="block truncate text-sm text-ink">{e.title}</span>
-                    <span className="block text-xs text-ink-3 tnum">
+                    <span className="line-clamp-2 block text-xs break-all text-ink-3 tnum">
                       {fmtTime(e.start)} to {fmtTime(e.end)}
                       {e.location ? `, ${e.location}` : ""}
                     </span>
@@ -268,7 +268,7 @@ function SchedulePanel({ connected }: { connected?: boolean }) {
 function NowLine() {
   return (
     <div className="flex items-center gap-2 py-1" aria-label="Now">
-      <span className="w-12 font-mono text-[11px] font-medium text-accent-text tnum">{fmtTime(new Date().toISOString())}</span>
+      <span className="w-[62px] whitespace-nowrap font-mono text-[11px] font-medium text-accent-text tnum">{fmtTime(new Date().toISOString())}</span>
       <span className="size-1.5 rounded-full bg-accent" />
       <span className="h-px flex-1 bg-accent/60" />
     </div>
@@ -304,7 +304,7 @@ function InboxPanel({ connected }: { connected?: boolean }) {
       ) : !threads.length ? (
         <p className="py-2 text-sm text-ink-3">Inbox zero. Nothing unread.</p>
       ) : (
-        <ul className="-mx-1 grid">
+        <ul className="-mx-1 grid grid-cols-[minmax(0,1fr)]">
           {threads.slice(0, 6).map((t) => (
             <li key={t.id}>
               <Link href={`/mail?thread=${t.id}`} className="block rounded-md px-1 py-2 hover:bg-sunk/70">

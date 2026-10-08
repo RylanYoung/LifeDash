@@ -12,6 +12,7 @@ import { Toaster, cx } from "./ui";
 import { ListDot } from "./ListDot";
 import { GoogleApps } from "./GoogleApps";
 import { Logo } from "./Logo";
+import { ThemeToggle } from "./ThemeToggle";
 
 const NAV = [
   { href: "/", label: "Today", icon: SunHorizon },
@@ -45,7 +46,7 @@ export function Shell({ children }: { children: ReactNode }) {
   if (!session) return <AuthGate />;
 
   return (
-    <div className="min-h-dvh md:grid md:grid-cols-[236px_1fr]">
+    <div className="min-h-dvh md:grid md:grid-cols-[236px_minmax(0,1fr)]">
       <aside className="sticky top-0 hidden h-dvh flex-col border-r border-rule bg-rail md:flex">
         <Link href="/" className="flex items-end gap-2.5 px-5 pt-5 pb-4" aria-label="LifeDash home">
           <Logo height={24} />
@@ -110,6 +111,9 @@ export function Shell({ children }: { children: ReactNode }) {
 
         <div className="mt-auto grid gap-0.5 border-t border-rule p-3">
           <GoogleApps variant="sidebar" />
+          <div className="px-1 pt-1 pb-1.5">
+            <ThemeToggle />
+          </div>
           <Link
             href="/settings"
             className={cx(

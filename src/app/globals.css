@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Theme follows data-theme on <html>, set before paint from the saved choice or the system. */
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
+
 /* LifeDash. Planner-calm layout in Solven Growth colours. */
 
 :root {
@@ -35,36 +38,34 @@
   color-scheme: light;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --ground: #0a0c0b;
-    --page: #121614;
-    --rail: #0d100f;
-    --sunk: #1a1f1d;
-    --ink: #f3f6f4;
-    --ink-2: #c4ccc8;
-    --ink-3: #a9b3ae;
-    --rule: #242a27;
-    --rule-strong: #343b38;
-    --accent: #00bf63;
-    --accent-hover: #19cf74;
-    --accent-text: #3ddc8c;
-    --accent-soft: #0f2a1c;
-    --accent-ink: #06130c;
-    --danger: #f2877e;
-    --danger-soft: #3a1f1d;
-    --ok: #7cc79a;
-    --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 16px 40px -8px rgb(0 0 0 / 0.6);
+:root[data-theme="dark"] {
+  --ground: #0a0c0b;
+  --page: #121614;
+  --rail: #0d100f;
+  --sunk: #1a1f1d;
+  --ink: #f3f6f4;
+  --ink-2: #c4ccc8;
+  --ink-3: #a9b3ae;
+  --rule: #242a27;
+  --rule-strong: #343b38;
+  --accent: #00bf63;
+  --accent-hover: #19cf74;
+  --accent-text: #3ddc8c;
+  --accent-soft: #0f2a1c;
+  --accent-ink: #06130c;
+  --danger: #f2877e;
+  --danger-soft: #3a1f1d;
+  --ok: #7cc79a;
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 16px 40px -8px rgb(0 0 0 / 0.6);
 
-    --tab-green: #3ddc8c;
-    --tab-ink: #93a9ff;
-    --tab-moss: #92c27a;
-    --tab-ochre: #e0b25a;
-    --tab-rose: #ef8fb1;
-    --tab-slate: #a3adbb;
-    --tab-plum: #c39ae6;
-    color-scheme: dark;
-  }
+  --tab-green: #3ddc8c;
+  --tab-ink: #93a9ff;
+  --tab-moss: #92c27a;
+  --tab-ochre: #e0b25a;
+  --tab-rose: #ef8fb1;
+  --tab-slate: #a3adbb;
+  --tab-plum: #c39ae6;
+  color-scheme: dark;
 }
 
 @theme inline {
@@ -264,3 +265,96 @@ a {
   }
 }
 
+
+/* ---------------------------------------------------------------- Tasks */
+/* --tone is the list's tab colour; everything below tints from it. */
+
+.task-row {
+  transition: background-color 160ms ease;
+}
+@media (hover: hover) {
+  .task-row:hover {
+    background: color-mix(in oklab, var(--tone, var(--accent)) 7%, transparent);
+  }
+}
+.task-row.is-open {
+  background: color-mix(in oklab, var(--tone, var(--accent)) 9%, transparent);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 999px;
+  font-weight: 500;
+  color: var(--ink-2);
+  background: color-mix(in oklab, var(--tone, var(--ink-3)) 12%, var(--page));
+}
+.chip-today {
+  color: var(--accent-text);
+  background: var(--accent-soft);
+}
+.chip-late {
+  color: var(--danger);
+  background: var(--danger-soft);
+}
+.chip-soon {
+  color: color-mix(in oklab, var(--tab-ochre) 80%, var(--ink));
+  background: color-mix(in oklab, var(--tab-ochre) 14%, var(--page));
+}
+.chip-done {
+  color: var(--accent-text);
+  background: var(--accent-soft);
+}
+
+/* Category cards and the list banner, tinted by the list colour. */
+.tone-card {
+  border: 1px solid color-mix(in oklab, var(--tone) 28%, var(--rule));
+  background: var(--page);
+  border-radius: 16px;
+  box-shadow: 0 1px 2px color-mix(in oklab, var(--tone) 10%, transparent), 0 8px 24px -16px color-mix(in oklab, var(--tone) 40%, transparent);
+}
+.tone-head {
+  background: color-mix(in oklab, var(--tone) 9%, var(--page));
+  border-bottom: 1px solid color-mix(in oklab, var(--tone) 18%, var(--rule));
+  border-radius: 15px 15px 0 0;
+}
+.tone-banner {
+  background: color-mix(in oklab, var(--tone) 11%, var(--page));
+  border: 1px solid color-mix(in oklab, var(--tone) 26%, var(--rule));
+  border-radius: 18px;
+}
+.tone-count {
+  display: inline-flex;
+  min-width: 24px;
+  height: 24px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  color: color-mix(in oklab, var(--tone) 72%, var(--ink));
+  background: color-mix(in oklab, var(--tone) 18%, var(--page));
+}
+.tone-plus {
+  color: var(--tone);
+}
+
+/* The tick pops when a task is completed. */
+@keyframes tick-pop {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.22);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+.tick[data-on="true"] {
+  animation: tick-pop 320ms var(--ease-out);
+}

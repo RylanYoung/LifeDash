@@ -23,9 +23,15 @@ export const viewport: Viewport = {
   ],
 };
 
+// Runs before first paint so the saved theme never flashes the wrong colours.
+const THEME_SCRIPT = `(function(){var m=window.matchMedia("(prefers-color-scheme: dark)");function apply(){var t=null;try{t=localStorage.getItem("lifedash.theme")}catch(e){}var dark=t==="dark"||(t!=="light"&&m.matches);document.documentElement.dataset.theme=dark?"dark":"light";}apply();m.addEventListener("change",apply);window.__applyTheme=apply;})();`;
+
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${sans.variable} ${mono.variable} antialiased`}>
+    <html lang="en" className={`${sans.variable} ${mono.variable} antialiased`} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+      </head>
       <body className="min-h-dvh">{children}</body>
     </html>
   );
