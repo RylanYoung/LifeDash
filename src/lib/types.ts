@@ -89,4 +89,4 @@ export type CalEvent = {
 };
 
 /** Planner tab colours. Keys are stored on the list; values live in CSS tokens. */
-export const LIST_COLORS = ["ink", "moss", "ochre", "rose", "slate", "plum"] as const;
+export const LIST_COLORS = ["green", "ink", "moss", "ochre", "rose", "slate", "plum"] as const;

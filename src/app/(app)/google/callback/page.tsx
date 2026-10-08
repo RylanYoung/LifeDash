@@ -44,7 +44,7 @@ function Callback() {
       {error ? (
         <div className="grid gap-3">
           <ErrorNote message={error} />
-          <a href="/settings#google" className="text-sm font-medium text-accent">
+          <a href="/settings#google" className="text-sm font-medium text-accent-text">
             Back to Settings
           </a>
         </div>

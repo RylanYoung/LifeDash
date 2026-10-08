@@ -32,7 +32,7 @@ export function KindPicker({ value, onChange }: { value: ListKind; onChange: (k:
             value === k ? "border-accent bg-accent-soft" : "border-rule-strong hover:bg-sunk"
           )}
         >
-          <Icon size={16} className={cx("mt-0.5", value === k ? "text-accent" : "text-ink-3")} />
+          <Icon size={16} className={cx("mt-0.5", value === k ? "text-accent-text" : "text-ink-3")} />
           <span>
             <span className="block text-sm font-medium">{label}</span>
             <span className="block text-xs text-ink-3">{body}</span>

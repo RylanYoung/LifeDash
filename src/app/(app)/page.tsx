@@ -9,7 +9,7 @@ import { TaskRow } from "@/components/TaskRow";
 import { Button, Empty, ErrorNote, Panel, Rows, cx } from "@/components/ui";
 import { latestBriefs, loadDoneSince, loadDue, localDate, type TaskWithSteps } from "@/lib/data";
 import { useStore } from "@/lib/store";
-import { api } from "@/lib/supabase";
+import { api, supabase } from "@/lib/supabase";
 import type { Brief, CalEvent, MailSummary } from "@/lib/types";
 import { fmtTime } from "@/lib/time";
 
@@ -52,6 +52,7 @@ export default function TodayPage() {
       <div className="grid gap-4 px-4 pb-10 md:px-8 lg:grid-cols-[minmax(0,1fr)_360px]">
         <div className="grid min-w-0 content-start gap-4">
           {error ? <ErrorNote message={error} onRetry={load} /> : null}
+          <GetStarted hasBrief={Boolean(briefs?.length)} />
           <BriefPanel briefs={briefs} today={today} />
 
           <Panel
@@ -114,7 +115,7 @@ function BriefPanel({ briefs, today }: { briefs: Brief[] | null; today: string }
     return (
       <Panel>
         <div className="flex items-start gap-3">
-          <span className="mt-0.5 text-accent">
+          <span className="mt-0.5 text-accent-text">
             <Sparkle size={18} weight="fill" />
           </span>
           <div className="min-w-0">
@@ -125,7 +126,7 @@ function BriefPanel({ briefs, today }: { briefs: Brief[] | null; today: string }
                 : "Claude writes a morning brief and an evening recap here, using your Pro plan. Set up the two routines once in Settings."}
             </p>
             {!last ? (
-              <Link href="/settings#claude" className="mt-2 inline-block text-[13px] font-medium text-accent hover:underline">
+              <Link href="/settings#claude" className="mt-2 inline-block text-[13px] font-medium text-accent-text hover:underline">
                 Set up briefs
               </Link>
             ) : null}
@@ -138,7 +139,7 @@ function BriefPanel({ briefs, today }: { briefs: Brief[] | null; today: string }
   return (
     <section className="rounded-xl border border-rule bg-page">
       <header className="flex items-center gap-2 px-4 pt-3.5 md:px-5">
-        <Sparkle size={16} weight="fill" className="text-accent" />
+        <Sparkle size={16} weight="fill" className="text-accent-text" />
         <h2 className="text-[13px] font-semibold text-ink-2">{active.kind === "morning" ? "Morning brief" : "Evening recap"}</h2>
         {morning && recap ? (
           <div className="ml-auto flex rounded-lg bg-sunk p-0.5 text-xs">
@@ -236,7 +237,7 @@ function SchedulePanel({ connected }: { connected?: boolean }) {
               <li key={e.id}>
                 {i === nowIndex && !live ? <NowLine /> : null}
                 <a href={e.link} target="_blank" rel="noreferrer" className={cx("flex gap-3 rounded-md px-1 py-2 hover:bg-sunk/70", past && "opacity-55")}>
-                  <span className={cx("w-12 shrink-0 pt-px font-mono text-xs tnum", live ? "font-medium text-accent" : "text-ink-3")}>{fmtTime(e.start)}</span>
+                  <span className={cx("w-12 shrink-0 pt-px font-mono text-xs tnum", live ? "font-medium text-accent-text" : "text-ink-3")}>{fmtTime(e.start)}</span>
                   <span className="min-w-0">
                     <span className="block truncate text-sm text-ink">{e.title}</span>
                     <span className="block text-xs text-ink-3 tnum">
@@ -258,7 +259,7 @@ function SchedulePanel({ connected }: { connected?: boolean }) {
 function NowLine() {
   return (
     <div className="flex items-center gap-2 py-1" aria-label="Now">
-      <span className="w-12 font-mono text-[11px] font-medium text-accent tnum">{fmtTime(new Date().toISOString())}</span>
+      <span className="w-12 font-mono text-[11px] font-medium text-accent-text tnum">{fmtTime(new Date().toISOString())}</span>
       <span className="size-1.5 rounded-full bg-accent" />
       <span className="h-px flex-1 bg-accent/60" />
     </div>
@@ -309,5 +310,105 @@ function InboxPanel({ connected }: { connected?: boolean }) {
         </ul>
       )}
     </Panel>
+  );
+}
+
+/**
+ * First-run checklist. Each step ticks itself off as it happens, and the
+ * whole card disappears once everything is done (or when hidden).
+ */
+function GetStarted({ hasBrief }: { hasBrief: boolean }) {
+  const { google, openQuickAdd, taskVersion } = useStore();
+  const [hasTask, setHasTask] = useState<boolean | null>(null);
+  const [claudeDone, setClaudeDone] = useState(false);
+  const [hidden, setHidden] = useState(false);
+
+  useEffect(() => {
+    try {
+      setHidden(localStorage.getItem("lifedash.setup-hidden") === "1");
+      setClaudeDone(localStorage.getItem("lifedash.claude-done") === "1");
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    supabase()
+      .from("tasks")
+      .select("id", { count: "exact", head: true })
+      .then(({ count }) => setHasTask((count ?? 0) > 0));
+  }, [taskVersion]);
+
+  const steps = [
+    { done: Boolean(google?.connected), title: "Connect your Google account", body: "Brings in your Gmail and Calendar.", href: "/settings#google", cta: "Connect" },
+    { done: Boolean(hasTask), title: "Add your first task", body: "Press N anywhere, or the + button on your phone.", onClick: () => openQuickAdd(), cta: "Add task" },
+    { done: claudeDone || hasBrief, title: "Connect Claude", body: "Lets Claude manage your tasks and write your morning brief.", href: "/settings#claude", cta: "Set up" },
+  ];
+  const left = steps.filter((s) => !s.done).length;
+  if (hidden || hasTask === null || google === null || left === 0) return null;
+
+  const hide = () => {
+    setHidden(true);
+    try {
+      localStorage.setItem("lifedash.setup-hidden", "1");
+    } catch {}
+  };
+
+  return (
+    <section className="rounded-xl border border-rule bg-page">
+      <header className="flex items-center justify-between px-4 pt-3.5 md:px-5">
+        <h2 className="text-sm font-semibold">Get set up</h2>
+        <span className="text-xs text-ink-3 tnum">
+          {3 - left} of 3 done
+          <button onClick={hide} className="ml-3 font-medium text-ink-2 hover:text-ink">
+            Hide
+          </button>
+        </span>
+      </header>
+      <ol className="grid px-2 pt-2 pb-2 md:px-3">
+        {steps.map((s, i) => (
+          <li key={s.title} className="flex items-center gap-3 rounded-lg px-2 py-2.5">
+            <span
+              className={cx(
+                "inline-flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold tnum",
+                s.done ? "bg-accent text-accent-ink" : "border border-rule-strong text-ink-3"
+              )}
+            >
+              {s.done ? <CheckCircle size={16} weight="fill" /> : i + 1}
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className={cx("block text-sm", s.done ? "text-ink-3 line-through" : "font-medium text-ink")}>{s.title}</span>
+              {!s.done ? <span className="block text-[13px] text-ink-3">{s.body}</span> : null}
+            </span>
+            {!s.done ? (
+              s.href ? (
+                <span className="flex items-center gap-2">
+                  {i === 2 ? (
+                    <button
+                      className="hidden text-xs text-ink-3 hover:text-ink sm:inline"
+                      onClick={() => {
+                        setClaudeDone(true);
+                        try {
+                          localStorage.setItem("lifedash.claude-done", "1");
+                        } catch {}
+                      }}
+                    >
+                      Already done
+                    </button>
+                  ) : null}
+                  <Link href={s.href}>
+                    <Button size="sm" variant={i === steps.findIndex((x) => !x.done) ? "primary" : "secondary"}>
+                      {s.cta}
+                    </Button>
+                  </Link>
+                </span>
+              ) : (
+                <Button size="sm" variant={i === steps.findIndex((x) => !x.done) ? "primary" : "secondary"} onClick={s.onClick}>
+                  {s.cta}
+                </Button>
+              )
+            ) : null}
+          </li>
+        ))}
+      </ol>
+    </section>
   );
 }

@@ -39,7 +39,7 @@ export default function ListPage() {
     return lists.length ? (
       <div className="px-4 py-16 text-center text-sm text-ink-3 md:px-8">
         That list no longer exists.{" "}
-        <Link href="/tasks" className="font-medium text-accent">
+        <Link href="/tasks" className="font-medium text-accent-text">
           All lists
         </Link>
       </div>

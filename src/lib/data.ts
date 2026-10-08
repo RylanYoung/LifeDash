@@ -61,7 +61,7 @@ async function seed() {
     await supabase()
       .from("lists")
       .insert([
-        { name: "Solven Growth", kind: "business", color: "ink", position: 1, description: "Everything that grows the business." },
+        { name: "Solven Growth", kind: "business", color: "green", position: 1, description: "Everything that grows the business." },
         { name: "Personal", kind: "personal", color: "moss", position: 2, description: "" },
       ])
   );

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { Button, ErrorNote, Field, Input } from "./ui";
+import { Logo } from "./Logo";
 
 /** Email + password. One owner; "Create account" is there for the very first sign-in. */
 export function AuthGate() {
@@ -40,6 +41,7 @@ export function AuthGate() {
   return (
     <div className="flex min-h-dvh items-center justify-center px-4">
       <form onSubmit={submit} className="anim-pop w-full max-w-[360px] rounded-2xl border border-rule bg-page p-6 shadow-float">
+        <Logo height={28} className="mb-5" />
         <h1 className="text-xl font-semibold tracking-[-0.02em]">{mode === "in" ? "Open your LifeDash" : "Create your LifeDash"}</h1>
         <p className="mt-1 text-sm text-ink-3">Tasks, calendar and email in one place.</p>
         <div className="mt-6 grid gap-4">
@@ -65,7 +67,7 @@ export function AuthGate() {
         </div>
         <p className="mt-5 text-center text-[13px] text-ink-3">
           {mode === "in" ? "First time here?" : "Already set up?"}{" "}
-          <button type="button" className="font-medium text-accent hover:underline" onClick={() => setMode(mode === "in" ? "up" : "in")}>
+          <button type="button" className="font-medium text-accent-text hover:underline" onClick={() => setMode(mode === "in" ? "up" : "in")}>
             {mode === "in" ? "Create account" : "Sign in"}
           </button>
         </p>

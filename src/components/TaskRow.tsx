@@ -112,7 +112,7 @@ export function TaskRow({
                 </span>
               ) : null}
               {due ? (
-                <span className={cx("inline-flex items-center gap-1", due.tone === "late" && "font-medium text-danger", due.tone === "today" && "font-medium text-accent")}>
+                <span className={cx("inline-flex items-center gap-1", due.tone === "late" && "font-medium text-danger", due.tone === "today" && "font-medium text-accent-text")}>
                   <CalendarBlank size={12} />
                   {due.tone === "late" ? `Overdue, ${due.text}` : due.text}
                 </span>

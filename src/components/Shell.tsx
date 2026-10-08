@@ -11,6 +11,7 @@ import { QuickAdd } from "./QuickAdd";
 import { Toaster, cx } from "./ui";
 import { ListDot } from "./ListDot";
 import { GoogleApps } from "./GoogleApps";
+import { Logo } from "./Logo";
 
 const NAV = [
   { href: "/", label: "Today", icon: SunHorizon },
@@ -46,10 +47,10 @@ export function Shell({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-dvh md:grid md:grid-cols-[236px_1fr]">
       <aside className="sticky top-0 hidden h-dvh flex-col border-r border-rule bg-rail md:flex">
-        <div className="flex items-center gap-2 px-5 pt-5 pb-4">
-          <Mark />
-          <span className="text-[15px] font-semibold tracking-[-0.01em]">LifeDash</span>
-        </div>
+        <Link href="/" className="flex items-end gap-2.5 px-5 pt-5 pb-4" aria-label="LifeDash home">
+          <Logo height={24} />
+          <span className="pb-[3px] text-[13px] font-medium text-ink-3">LifeDash</span>
+        </Link>
 
         <div className="px-3 pb-3">
           <button
@@ -75,7 +76,7 @@ export function Shell({ children }: { children: ReactNode }) {
                   on ? "bg-page font-medium text-ink shadow-[0_0_0_1px_var(--rule)]" : "text-ink-2 hover:bg-sunk hover:text-ink"
                 )}
               >
-                <Icon size={18} weight={on ? "fill" : "regular"} className={on ? "text-accent" : ""} />
+                <Icon size={18} weight={on ? "fill" : "regular"} className={on ? "text-accent-text" : ""} />
                 {label}
               </Link>
             );
@@ -145,7 +146,7 @@ function MobileBar({ path }: { path: string }) {
             key={item.href}
             href={item.href}
             aria-current={isActive(path, item.href) ? "page" : undefined}
-            className={cx("flex h-[60px] flex-col items-center justify-center gap-1 text-[11px]", isActive(path, item.href) ? "text-accent" : "text-ink-3")}
+            className={cx("flex h-[60px] flex-col items-center justify-center gap-1 text-[11px]", isActive(path, item.href) ? "text-accent-text" : "text-ink-3")}
           >
             <item.icon size={22} weight={isActive(path, item.href) ? "fill" : "regular"} />
             {item.label}
@@ -184,15 +185,6 @@ export function PageHeader({ title, sub, actions }: { title: string; sub?: React
         </Link>
       </div>
     </header>
-  );
-}
-
-function Mark() {
-  // A planner page with a ribbon marker.
-  return (
-    <span className="relative inline-flex h-[22px] w-[18px] rounded-[4px] border-[1.5px] border-ink bg-page" aria-hidden>
-      <span className="absolute -bottom-[3px] right-[3px] h-[9px] w-[4px] bg-accent [clip-path:polygon(0_0,100%_0,100%_100%,50%_70%,0_100%)]" />
-    </span>
   );
 }
 

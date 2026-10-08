@@ -176,7 +176,7 @@ function WeekGrid({ days, events, onSlot, onEvent }: { days: Date[]; events: Cal
           const today = sameDay(d, now);
           return (
             <div key={d.toISOString()} className="border-l border-rule px-2 py-2.5">
-              <div className={cx("text-xs", today ? "font-medium text-accent" : "text-ink-3")}>{d.toLocaleDateString(undefined, { weekday: "short" })}</div>
+              <div className={cx("text-xs", today ? "font-medium text-accent-text" : "text-ink-3")}>{d.toLocaleDateString(undefined, { weekday: "short" })}</div>
               <div className={cx("mt-0.5 inline-flex size-7 items-center justify-center rounded-full text-[15px] font-semibold tnum", today && "bg-accent text-accent-ink")}>
                 {d.getDate()}
               </div>
@@ -265,7 +265,7 @@ function Agenda({ days, events, onEvent, onAdd }: { days: Date[]; events: CalEve
         return (
           <section key={ds}>
             <div className="mb-1.5 flex items-center gap-2">
-              <h2 className={cx("text-sm font-semibold", today && "text-accent")}>
+              <h2 className={cx("text-sm font-semibold", today && "text-accent-text")}>
                 {today ? "Today" : d.toLocaleDateString(undefined, { weekday: "long" })}
                 <span className="ml-1.5 font-normal text-ink-3">{d.toLocaleDateString(undefined, { day: "numeric", month: "short" })}</span>
               </h2>
@@ -431,7 +431,7 @@ function EventSheet({ draft, onClose, onSaved }: { draft: Draft | null; onClose:
         {d.link || d.meet ? (
           <div className="flex flex-wrap gap-4 text-[13px]">
             {d.meet ? (
-              <a href={d.meet} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 font-medium text-accent hover:underline">
+              <a href={d.meet} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 font-medium text-accent-text hover:underline">
                 <VideoCamera size={15} /> Join Meet
               </a>
             ) : null}

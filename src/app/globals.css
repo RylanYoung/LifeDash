@@ -1,26 +1,28 @@
 @import "tailwindcss";
 
-/* LifeDash. A planner page: neutral paper, ink, one fountain-pen blue. */
+/* LifeDash. Planner-calm layout in Solven Growth colours. */
 
 :root {
-  --ground: #f3f3f0;
-  --page: #fcfcfa;
-  --rail: #eeeeea;
-  --sunk: #f0f0ec;
-  --ink: #1d2026;
-  --ink-2: #4a4f58;
-  --ink-3: #676d77;
-  --rule: #e2e2dc;
-  --rule-strong: #cfcfc8;
-  --accent: #2c48a8;
-  --accent-hover: #233b8c;
-  --accent-soft: #e6eaf7;
-  --accent-ink: #ffffff;
+  --ground: #f6f8f7;
+  --page: #ffffff;
+  --rail: #f1f4f2;
+  --sunk: #f1f4f2;
+  --ink: #0b0d0c;
+  --ink-2: #3d4542;
+  --ink-3: #5f6965;
+  --rule: #e6eae8;
+  --rule-strong: #d3d9d6;
+  --accent: #00bf63;
+  --accent-hover: #00a956;
+  --accent-text: #007a3d;
+  --accent-soft: #e7f8ef;
+  --accent-ink: #06130c;
   --danger: #b3261e;
   --danger-soft: #f8e7e5;
   --ok: #2f7a4f;
   --shadow: 0 1px 2px rgb(29 32 38 / 0.06), 0 12px 32px -8px rgb(29 32 38 / 0.18);
 
+  --tab-green: #00a956;
   --tab-ink: #2c48a8;
   --tab-moss: #4e7a3a;
   --tab-ochre: #a06f12;
@@ -35,24 +37,26 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --ground: #111316;
-    --page: #171a1e;
-    --rail: #14161a;
-    --sunk: #1d2025;
-    --ink: #e8e9ec;
-    --ink-2: #b6bac1;
-    --ink-3: #8f959e;
-    --rule: #2a2e34;
-    --rule-strong: #3a3f46;
-    --accent: #93a9ff;
-    --accent-hover: #adbdff;
-    --accent-soft: #1f2741;
-    --accent-ink: #0e1220;
+    --ground: #0a0c0b;
+    --page: #121614;
+    --rail: #0d100f;
+    --sunk: #1a1f1d;
+    --ink: #f3f6f4;
+    --ink-2: #c4ccc8;
+    --ink-3: #a9b3ae;
+    --rule: #242a27;
+    --rule-strong: #343b38;
+    --accent: #00bf63;
+    --accent-hover: #19cf74;
+    --accent-text: #3ddc8c;
+    --accent-soft: #0f2a1c;
+    --accent-ink: #06130c;
     --danger: #f2877e;
     --danger-soft: #3a1f1d;
     --ok: #7cc79a;
     --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 16px 40px -8px rgb(0 0 0 / 0.6);
 
+    --tab-green: #3ddc8c;
     --tab-ink: #93a9ff;
     --tab-moss: #92c27a;
     --tab-ochre: #e0b25a;
@@ -75,6 +79,7 @@
   --color-rule-strong: var(--rule-strong);
   --color-accent: var(--accent);
   --color-accent-hover: var(--accent-hover);
+  --color-accent-text: var(--accent-text);
   --color-accent-soft: var(--accent-soft);
   --color-accent-ink: var(--accent-ink);
   --color-danger: var(--danger);
@@ -105,14 +110,14 @@ body {
 }
 input,
 textarea {
-  caret-color: var(--accent);
+  caret-color: var(--accent-text);
 }
 * {
   scrollbar-width: thin;
   scrollbar-color: var(--rule-strong) transparent;
 }
 :focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--accent-text);
   outline-offset: 2px;
   border-radius: 6px;
 }
@@ -236,7 +241,7 @@ a {
   font-weight: 600;
 }
 .prose-brief a {
-  color: var(--accent);
+  color: var(--accent-text);
   text-decoration: underline;
 }
 
@@ -258,3 +263,4 @@ a {
     opacity: 1 !important;
   }
 }
+
