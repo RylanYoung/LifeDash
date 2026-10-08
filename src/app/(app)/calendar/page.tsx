@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowSquareOut, CalendarBlank, CaretLeft, CaretRight, Plus, Trash, VideoCamera } from "@phosphor-icons/react";
+import { ArrowSquareOut, CalendarBlank, CaretLeft, CaretRight, Check, CheckCircle, Copy, Plus, Question, Trash, VideoCamera, X, XCircle } from "@phosphor-icons/react";
 import { PageHeader } from "@/components/Shell";
 import { Button, Empty, ErrorNote, Field, IconButton, Input, Rows, Sheet, Textarea, cx, toast } from "@/components/ui";
 import { useStore } from "@/lib/store";
@@ -13,7 +13,22 @@ import { localDate } from "@/lib/data";
 
 const HOUR = 48; // px per hour in the week grid
 
-type Draft = { id?: string; title: string; allDay: boolean; start: string; end: string; location: string; description: string; link?: string; meet?: string };
+type Guest = CalEvent["attendees"][number];
+type Draft = {
+  id?: string;
+  title: string;
+  allDay: boolean;
+  start: string;
+  end: string;
+  location: string;
+  description: string;
+  link?: string;
+  meet?: string;
+  guests: Guest[];
+  /** Pending Meet change: add a link, remove the existing one, or leave it. */
+  meetChange?: "add" | "remove";
+  isOrganizer: boolean;
+};
 
 export default function CalendarPage() {
   const { google } = useStore();
@@ -38,7 +53,7 @@ export default function CalendarPage() {
 
   const newAt = (d: Date) => {
     const end = new Date(d.getTime() + 3_600_000);
-    setDraft({ title: "", allDay: false, start: toLocalInput(d), end: toLocalInput(end), location: "", description: "" });
+    setDraft({ title: "", allDay: false, start: toLocalInput(d), end: toLocalInput(end), location: "", description: "", guests: [], isOrganizer: true });
   };
 
   const openEvent = (e: CalEvent) =>
@@ -52,6 +67,8 @@ export default function CalendarPage() {
       description: e.description,
       link: e.link,
       meet: e.meet,
+      guests: e.attendees,
+      isOrganizer: e.isOrganizer,
     });
 
   const label = `${days[0].toLocaleDateString(undefined, { day: "numeric", month: "short" })} to ${days[6].toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })}`;
@@ -328,8 +345,12 @@ function EventSheet({ draft, onClose, onSaved }: { draft: Draft | null; onClose:
     setBusy(true);
     setError(null);
     try {
+      // Only the organiser can change the guest list or the Meet link.
+      const extras = d.isOrganizer
+        ? { attendees: d.guests.map((g) => g.email), meet: d.meetChange === "add" ? true : d.meetChange === "remove" ? false : undefined }
+        : {};
       const body = d.allDay
-        ? { title: d.title || "(no title)", allDay: true, start: d.start.slice(0, 10), end: localDate(addDays(new Date(`${d.end.slice(0, 10)}T00:00:00`), 1)), location: d.location, description: d.description }
+        ? { title: d.title || "(no title)", allDay: true, start: d.start.slice(0, 10), end: localDate(addDays(new Date(`${d.end.slice(0, 10)}T00:00:00`), 1)), location: d.location, description: d.description, ...extras }
         : {
             title: d.title || "(no title)",
             allDay: false,
@@ -337,10 +358,11 @@ function EventSheet({ draft, onClose, onSaved }: { draft: Draft | null; onClose:
             end: new Date(d.end).toISOString(),
             location: d.location,
             description: d.description,
+            ...extras,
           };
       if (!d.allDay && +new Date(d.end) <= +new Date(d.start)) throw new Error("The end has to be after the start.");
       await api(d.id ? `/api/calendar/${encodeURIComponent(d.id)}` : "/api/calendar", { method: d.id ? "PATCH" : "POST", body: JSON.stringify(body) });
-      toast(d.id ? "Event updated" : "Event added");
+      toast(d.guests.length && d.isOrganizer ? (d.id ? "Saved. Guests notified" : "Event added. Invites sent") : d.id ? "Event updated" : "Event added");
       onSaved();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not save");
@@ -350,7 +372,7 @@ function EventSheet({ draft, onClose, onSaved }: { draft: Draft | null; onClose:
   }
 
   async function remove() {
-    if (!d?.id || !confirm(`Delete "${d.title}"?`)) return;
+    if (!d?.id || !confirm(d.guests.length ? `Delete "${d.title}"? Guests will get a cancellation email.` : `Delete "${d.title}"?`)) return;
     setBusy(true);
     try {
       await api(`/api/calendar/${encodeURIComponent(d.id)}`, { method: "DELETE" });
@@ -380,7 +402,7 @@ function EventSheet({ draft, onClose, onSaved }: { draft: Draft | null; onClose:
               Cancel
             </Button>
             <Button variant="primary" busy={busy} onClick={save}>
-              {d.id ? "Save" : "Add event"}
+              {d.id ? "Save" : d.guests.length ? "Add and invite" : "Add event"}
             </Button>
           </div>
         </>
@@ -421,29 +443,162 @@ function EventSheet({ draft, onClose, onSaved }: { draft: Draft | null; onClose:
             <Input id="ev-end" type={d.allDay ? "date" : "datetime-local"} value={d.allDay ? d.end.slice(0, 10) : d.end} onChange={(e) => set({ end: e.target.value })} />
           </Field>
         </div>
+        <GuestField guests={d.guests} disabled={!d.isOrganizer} onChange={(guests) => set({ guests })} />
+
+        <MeetField
+          link={d.meetChange === "remove" ? "" : d.meet ?? ""}
+          pending={d.meetChange === "add"}
+          disabled={!d.isOrganizer}
+          onAdd={() => set({ meetChange: d.meet ? undefined : "add" })}
+          onRemove={() => set({ meetChange: d.meet ? "remove" : undefined })}
+        />
+
         <Field label="Location" htmlFor="ev-loc">
-          <Input id="ev-loc" value={d.location} onChange={(e) => set({ location: e.target.value })} />
+          <Input id="ev-loc" value={d.location} onChange={(e) => set({ location: e.target.value })} placeholder="Add location" />
         </Field>
-        <Field label="Notes" htmlFor="ev-notes">
-          <Textarea id="ev-notes" rows={4} value={d.description} onChange={(e) => set({ description: e.target.value })} />
+        <Field label="Description" htmlFor="ev-notes">
+          <Textarea id="ev-notes" rows={4} value={d.description} onChange={(e) => set({ description: e.target.value })} placeholder="Add description" />
         </Field>
+        {!d.isOrganizer ? <p className="text-[13px] text-ink-3">Someone else organises this event, so only they can change the guests or the Meet link.</p> : null}
         {error ? <ErrorNote message={error} /> : null}
-        {d.link || d.meet ? (
-          <div className="flex flex-wrap gap-4 text-[13px]">
-            {d.meet ? (
-              <a href={d.meet} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 font-medium text-accent-text hover:underline">
-                <VideoCamera size={15} /> Join Meet
-              </a>
-            ) : null}
-            {d.link ? (
-              <a href={d.link} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-ink-3 hover:text-ink">
-                <ArrowSquareOut size={14} /> Open in Google Calendar
-              </a>
-            ) : null}
-          </div>
+        {d.link ? (
+          <a href={d.link} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-[13px] text-ink-3 hover:text-ink">
+            <ArrowSquareOut size={14} /> Open in Google Calendar
+          </a>
         ) : null}
         <button type="submit" hidden />
       </form>
     </Sheet>
+  );
+}
+
+const EMAIL = /^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]+$/;
+
+const STATUS: Record<Guest["status"], { label: string; icon: React.ReactNode }> = {
+  accepted: { label: "Going", icon: <CheckCircle size={15} weight="fill" className="text-accent-text" /> },
+  declined: { label: "Not going", icon: <XCircle size={15} weight="fill" className="text-danger" /> },
+  tentative: { label: "Maybe", icon: <Question size={15} weight="bold" className="text-[var(--tab-ochre)]" /> },
+  needsAction: { label: "Awaiting reply", icon: <span className="inline-block size-[13px] rounded-full border-[1.5px] border-rule-strong" /> },
+};
+
+/** Type an email, press Enter (or comma) and it becomes a guest. Backspace on empty removes the last one. */
+function GuestField({ guests, onChange, disabled }: { guests: Guest[]; onChange: (g: Guest[]) => void; disabled: boolean }) {
+  const [text, setText] = useState("");
+  const [bad, setBad] = useState(false);
+
+  function commit(raw = text) {
+    const emails = raw.split(/[\s,;]+/).map((x) => x.trim()).filter(Boolean);
+    if (!emails.length) return;
+    const valid = emails.filter((x) => EMAIL.test(x) && !guests.some((g) => g.email.toLowerCase() === x.toLowerCase()));
+    setBad(emails.some((x) => !EMAIL.test(x)));
+    if (valid.length) onChange([...guests, ...valid.map((email) => ({ email, name: "", status: "needsAction" as const }))]);
+    setText(emails.filter((x) => !EMAIL.test(x)).join(" "));
+  }
+
+  return (
+    <Field label="Guests" htmlFor="ev-guest" hint={guests.length && !disabled ? "Google emails each guest an invite when you save." : undefined}>
+      {!disabled ? (
+        <Input
+          id="ev-guest"
+          type="email"
+          inputMode="email"
+          autoComplete="off"
+          value={text}
+          placeholder="Add guests by email"
+          onChange={(e) => {
+            setBad(false);
+            const v = e.target.value;
+            if (/[,;]$/.test(v)) commit(v);
+            else setText(v);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              commit();
+            }
+            if (e.key === "Backspace" && !text && guests.length) onChange(guests.slice(0, -1));
+          }}
+          onBlur={() => commit()}
+          aria-invalid={bad}
+        />
+      ) : null}
+      {bad ? <p className="text-xs text-danger">That does not look like an email address.</p> : null}
+      {guests.length ? (
+        <ul className="grid gap-0.5">
+          {guests.map((g) => (
+            <li key={g.email} className="flex items-center gap-2.5 rounded-lg px-1 py-1.5">
+              <span title={STATUS[g.status].label} className="inline-flex w-4 justify-center">
+                {STATUS[g.status].icon}
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-sm text-ink">{g.name || g.email}</span>
+                <span className="block truncate text-xs text-ink-3">
+                  {g.name ? `${g.email}, ` : ""}
+                  {STATUS[g.status].label}
+                </span>
+              </span>
+              {!disabled ? (
+                <IconButton label={`Remove ${g.email}`} className="size-7" onClick={() => onChange(guests.filter((x) => x.email !== g.email))}>
+                  <X size={13} />
+                </IconButton>
+              ) : null}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </Field>
+  );
+}
+
+function MeetField({ link, pending, disabled, onAdd, onRemove }: { link: string; pending: boolean; disabled: boolean; onAdd: () => void; onRemove: () => void }) {
+  const [copied, setCopied] = useState(false);
+  if (link) {
+    return (
+      <div className="flex flex-wrap items-center gap-2 rounded-lg bg-accent-soft px-3 py-2.5">
+        <VideoCamera size={18} weight="fill" className="text-accent-text" />
+        <a href={link} target="_blank" rel="noreferrer" className="press inline-flex h-8 items-center rounded-lg bg-accent px-3 text-[13px] font-medium text-accent-ink hover:bg-accent-hover">
+          Join with Google Meet
+        </a>
+        <span className="min-w-0 flex-1 truncate font-mono text-xs text-ink-3">{link.replace("https://", "")}</span>
+        <IconButton
+          label="Copy Meet link"
+          className="size-8"
+          onClick={async () => {
+            await navigator.clipboard.writeText(link);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 1500);
+          }}
+        >
+          {copied ? <Check size={15} /> : <Copy size={15} />}
+        </IconButton>
+        {!disabled ? (
+          <IconButton label="Remove Google Meet" className="size-8" onClick={onRemove}>
+            <X size={15} />
+          </IconButton>
+        ) : null}
+      </div>
+    );
+  }
+  if (pending) {
+    return (
+      <div className="flex items-center gap-2 rounded-lg bg-accent-soft px-3 py-2.5 text-[13px] text-ink">
+        <VideoCamera size={18} weight="fill" className="text-accent-text" />
+        <span className="flex-1">A Google Meet link is created when you save.</span>
+        <IconButton label="Do not add Google Meet" className="size-8" onClick={onRemove}>
+          <X size={15} />
+        </IconButton>
+      </div>
+    );
+  }
+  if (disabled) return null;
+  return (
+    <button
+      type="button"
+      onClick={onAdd}
+      className="press inline-flex h-10 w-fit items-center gap-2 rounded-lg border border-rule-strong px-3.5 text-sm font-medium text-ink hover:bg-sunk"
+    >
+      <VideoCamera size={17} className="text-accent-text" />
+      Add Google Meet video conferencing
+    </button>
   );
 }

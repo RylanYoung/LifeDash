@@ -251,6 +251,8 @@ type GEvent = {
   status?: string;
   start: { dateTime?: string; date?: string };
   end: { dateTime?: string; date?: string };
+  attendees?: { email: string; displayName?: string; responseStatus?: string; self?: boolean; organizer?: boolean }[];
+  organizer?: { email: string; self?: boolean };
 };
 
 const toEvent = (e: GEvent): CalEvent => ({
@@ -263,6 +265,10 @@ const toEvent = (e: GEvent): CalEvent => ({
   allDay: !e.start.dateTime,
   link: e.htmlLink,
   meet: e.hangoutLink ?? "",
+  attendees: (e.attendees ?? [])
+    .filter((a) => !a.self)
+    .map((a) => ({ email: a.email, name: a.displayName ?? "", status: (a.responseStatus ?? "needsAction") as CalEvent["attendees"][number]["status"] })),
+  isOrganizer: e.organizer?.self ?? true,
 });
 
 export async function listEvents(userId: string, sb: SupabaseClient, from: string, to: string) {
@@ -279,6 +285,10 @@ export type EventInput = {
   end?: string;
   allDay?: boolean;
   timeZone?: string;
+  /** Guest emails. Replaces the guest list when given. */
+  attendees?: string[];
+  /** true adds a Google Meet link, false removes it, undefined leaves it alone. */
+  meet?: boolean;
 };
 
 function eventBody(e: EventInput) {
@@ -288,19 +298,27 @@ function eventBody(e: EventInput) {
   if (e.location !== undefined) body.location = e.location;
   if (e.start) body.start = e.allDay ? { date: e.start.slice(0, 10) } : { dateTime: e.start, ...(e.timeZone ? { timeZone: e.timeZone } : {}) };
   if (e.end) body.end = e.allDay ? { date: e.end.slice(0, 10) } : { dateTime: e.end, ...(e.timeZone ? { timeZone: e.timeZone } : {}) };
+  if (e.attendees) body.attendees = [...new Set(e.attendees.map((a) => a.trim().toLowerCase()).filter(Boolean))].map((email) => ({ email }));
+  if (e.meet === true) body.conferenceData = { createRequest: { requestId: crypto.randomUUID(), conferenceSolutionKey: { type: "hangoutsMeet" } } };
+  if (e.meet === false) body.conferenceData = null;
   return body;
 }
 
+// Guests get Google's own invite, update and cancellation emails, like in Google Calendar.
+const WRITE = "conferenceDataVersion=1&sendUpdates=all";
+
 export async function createEvent(userId: string, sb: SupabaseClient, e: EventInput) {
   if (!e.start || !e.end) throw new HttpError(400, "An event needs a start and an end.");
-  return toEvent((await gfetch(userId, sb, CAL, { method: "POST", body: JSON.stringify(eventBody(e)) })) as GEvent);
+  return toEvent((await gfetch(userId, sb, `${CAL}?${WRITE}`, { method: "POST", body: JSON.stringify(eventBody(e)) })) as GEvent);
 }
 
 export async function updateEvent(userId: string, sb: SupabaseClient, id: string, e: EventInput) {
-  return toEvent((await gfetch(userId, sb, `${CAL}/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(eventBody(e)) })) as GEvent);
+  return toEvent(
+    (await gfetch(userId, sb, `${CAL}/${encodeURIComponent(id)}?${WRITE}`, { method: "PATCH", body: JSON.stringify(eventBody(e)) })) as GEvent
+  );
 }
 
 export async function deleteEvent(userId: string, sb: SupabaseClient, id: string) {
-  await gfetch(userId, sb, `${CAL}/${encodeURIComponent(id)}`, { method: "DELETE" });
+  await gfetch(userId, sb, `${CAL}/${encodeURIComponent(id)}?sendUpdates=all`, { method: "DELETE" });
   return { ok: true };
 }

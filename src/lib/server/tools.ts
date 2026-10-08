@@ -177,6 +177,8 @@ export const TOOLS = [
         all_day: { type: "boolean" },
         description: { type: "string" },
         location: { type: "string" },
+        guests: { type: "array", items: { type: "string" }, description: "Emails to invite. Google emails them the invite." },
+        add_meet: { type: "boolean", description: "Attach a Google Meet video link." },
       },
       required: ["title", "start", "end"],
     },
@@ -450,6 +452,8 @@ export async function callTool(sb: SupabaseClient, userId: string, name: string,
         description: str(a.description),
         location: str(a.location),
         timeZone: tz,
+        attendees: Array.isArray(a.guests) ? a.guests.map(str).filter(Boolean) : undefined,
+        meet: a.add_meet === true ? true : undefined,
       });
     }
 

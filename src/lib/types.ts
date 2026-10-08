@@ -86,6 +86,9 @@ export type CalEvent = {
   allDay: boolean;
   link: string;
   meet: string;
+  attendees: { email: string; name: string; status: "needsAction" | "accepted" | "declined" | "tentative" }[];
+  /** False when someone else invited you; then only they can change it. */
+  isOrganizer: boolean;
 };
 
 /** Planner tab colours. Keys are stored on the list; values live in CSS tokens. */

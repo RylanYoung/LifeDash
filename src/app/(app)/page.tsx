@@ -6,6 +6,7 @@ import Markdown from "react-markdown";
 import { CalendarBlank, CheckCircle, EnvelopeSimple, Sparkle } from "@phosphor-icons/react";
 import { PageHeader } from "@/components/Shell";
 import { TaskRow } from "@/components/TaskRow";
+import { AskClaude } from "@/components/AskClaude";
 import { Button, Empty, ErrorNote, Panel, Rows, cx } from "@/components/ui";
 import { latestBriefs, loadDoneSince, loadDue, localDate, type TaskWithSteps } from "@/lib/data";
 import { useStore } from "@/lib/store";
@@ -39,6 +40,13 @@ export default function TodayPage() {
     load();
   }, [load, taskVersion]);
 
+  // Coming back from Claude: pick up the brief it just saved.
+  useEffect(() => {
+    const onFocus = () => document.visibilityState === "visible" && load();
+    document.addEventListener("visibilitychange", onFocus);
+    return () => document.removeEventListener("visibilitychange", onFocus);
+  }, [load]);
+
   const now = new Date();
   const hour = now.getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
@@ -51,6 +59,7 @@ export default function TodayPage() {
       <PageHeader title={dateLabel} sub={greeting} />
       <div className="grid gap-4 px-4 pb-10 md:px-8 lg:grid-cols-[minmax(0,1fr)_360px]">
         <div className="grid min-w-0 content-start gap-4">
+          <AskClaude />
           {error ? <ErrorNote message={error} onRetry={load} /> : null}
           <GetStarted hasBrief={Boolean(briefs?.length)} />
           <BriefPanel briefs={briefs} today={today} />
@@ -122,8 +131,8 @@ function BriefPanel({ briefs, today }: { briefs: Brief[] | null; today: string }
             <p className="text-sm font-medium">No brief yet today</p>
             <p className="mt-1 max-w-[56ch] text-[13px] leading-relaxed text-ink-3">
               {last
-                ? `Your last ${last.kind === "morning" ? "brief" : "recap"} was on ${new Date(`${last.for_date}T00:00:00`).toLocaleDateString(undefined, { day: "numeric", month: "short" })}. Claude writes the next one on its schedule.`
-                : "Claude writes a morning brief and an evening recap here, using your Pro plan. Set up the two routines once in Settings."}
+                ? `Your last ${last.kind === "morning" ? "brief" : "recap"} was on ${new Date(`${last.for_date}T00:00:00`).toLocaleDateString(undefined, { day: "numeric", month: "short" })}. Tap Morning brief above to make a fresh one.`
+                : "Tap Morning brief above and Claude writes it here in about a minute. You can also schedule it to run every day in Settings."}
             </p>
             {!last ? (
               <Link href="/settings#claude" className="mt-2 inline-block text-[13px] font-medium text-accent-text hover:underline">
